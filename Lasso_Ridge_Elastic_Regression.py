@@ -1,84 +1,29 @@
-import numpy as np
-import pandas as pd
-from sklearn.linear_model import RidgeCV, LassoCV, ElasticNetCV
-from sklearn.model_selection import train_test_split
+from sklearn.linear_model import RidgeCV, Lasso, ElasticNet
+from sklearn.datasets import make_regression
 from sklearn.metrics import mean_squared_error
-import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+import numpy as np
 
-# ----------------------------
-# Example 1: 15 useful, 4085 useless features
-# ----------------------------
+# Generate synthetic regression data
+X, y = make_regression(n_samples=100, n_features=20, noise=0.1, random_state=42)
 
-np.random.seed(42)
-n = 1000       # observations
-p = 5000       # total features
-real_p = 15    # true predictors
+# Split into train/test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Generate X and y
-X = np.random.randn(n, p)
-y = X[:, :real_p].sum(axis=1) + np.random.randn(n)
+# Alpha values to test
+alphas = np.logspace(-4, 4, 100)
 
-# Split data (2/3 train, 1/3 test)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1/3, random_state=42)
-
-# Ridge Regression (alpha = 0)
-ridge = RidgeCV(alphas=np.logspace(-6, 6, 13), scoring='neg_mean_squared_error', cv=10)
+# Ridge Regression
+ridge = RidgeCV(alphas=alphas)  # store_cv_values removed
 ridge.fit(X_train, y_train)
-ridge_pred = ridge.predict(X_test)
-ridge_mse = mean_squared_error(y_test, ridge_pred)
+print("MSE Ridge     (best alpha={}): {}".format(ridge.alpha_, mean_squared_error(y_test, ridge.predict(X_test))))
 
-# Lasso Regression (alpha = 1)
-lasso = LassoCV(alphas=None, cv=10, random_state=42, max_iter=10000)
+# Lasso Regression
+lasso = Lasso(alpha=1.0)
 lasso.fit(X_train, y_train)
-lasso_pred = lasso.predict(X_test)
-lasso_mse = mean_squared_error(y_test, lasso_pred)
+print("MSE Lasso     (alpha=1):", mean_squared_error(y_test, lasso.predict(X_test)))
 
-# ElasticNet Regression (alpha = 0.5)
-elastic = ElasticNetCV(l1_ratio=0.5, cv=10, random_state=42, max_iter=10000)
-elastic.fit(X_train, y_train)
-elastic_pred = elastic.predict(X_test)
-elastic_mse = mean_squared_error(y_test, elastic_pred)
-
-print("MSE Ridge     (alpha=0):", ridge_mse)
-print("MSE Lasso     (alpha=1):", lasso_mse)
-print("MSE ElasticNet(alpha=0.5):", elastic_mse)
-
-# Try multiple alpha values for ElasticNet (alpha = l1_ratio)
-alphas = np.linspace(0, 1, 11)
-mse_results = []
-
-for alpha in alphas:
-    enet = ElasticNetCV(l1_ratio=alpha, cv=10, random_state=42, max_iter=10000)
-    enet.fit(X_train, y_train)
-    pred = enet.predict(X_test)
-    mse = mean_squared_error(y_test, pred)
-    mse_results.append({"alpha": alpha, "mse": mse})
-
-results_df1 = pd.DataFrame(mse_results)
-print("\nElasticNet results (Example 1):")
-print(results_df1)
-
-# ----------------------------
-# Example 2: 1500 useful, 3500 useless features
-# ----------------------------
-
-np.random.seed(42)
-real_p = 1500
-
-# Generate X and y again
-X = np.random.randn(n, p)
-y = X[:, :real_p].sum(axis=1) + np.random.randn(n)
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1/3, random_state=42)
-
-mse_results = []
-for alpha in alphas:
-    enet = ElasticNetCV(l1_ratio=alpha, cv=10, random_state=42, max_iter=10000)
-    enet.fit(X_train, y_train)
-    pred = enet.predict(X_test)
-    mse = mean_squared_error(y_test, pred)
-    mse_results.append({"alpha": alpha, "mse": mse})
-
-results_df2 = pd.DataFrame(mse_results)
-print("\nElasticNet results (Example 2):")
-print(results_df2)
+# ElasticNet Regression
+enet = ElasticNet(alpha=1.0, l1_ratio=0.5)
+enet.fit(X_train, y_train)
+print("MSE ElasticNet(alpha=1, l1_ratio=0.5):", mean_squared_error(y_test, enet.predict(X_test)))
