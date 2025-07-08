@@ -51,3 +51,22 @@ for sample in pca_df.index:
 
 plt.grid(True)
 plt.show()
+
+# Calculate loading scores for PCA1
+# If you did NOT transpose:
+#loading_scores = pd.Series(pca.components_[0], index=data.columns)
+
+# If you DID transpose:
+loading_scores = pd.Series(pca.components_[0], index=data.index)
+
+# Get absolute values for contribution magnitude
+abs_loading_scores = loading_scores.abs()
+
+# Sort by descending absolute loading scores
+sorted_loading_scores = abs_loading_scores.sort_values(ascending=False)
+
+# Display top 10 genes contributing to PCA1
+top_10_genes = sorted_loading_scores.head(10)
+print("Top 10 Genes Contributing to PCA1 (with loading scores):\n")
+for gene in top_10_genes.index:
+    print(f"{gene}: {loading_scores[gene]}")
