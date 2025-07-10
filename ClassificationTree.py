@@ -58,3 +58,23 @@ plt.title("Confusion Matrix")
 plt.show()
 
 #pruning the tree
+path=tree.cost_complexity_pruning_path(X_train, y_train)
+ccp_alphas= path.ccp_alphas
+ccp_alphas=ccp_alphas[:-1]
+clf_tree=[]
+for ccp_alpha in ccp_alphas:
+    clf=DecisionTreeClassifier(ccp_alpha=ccp_alpha,random_state=0)
+    clf.fit(X_train,y_train)
+    clf_tree.append(clf)
+
+#now we try to find the accuracy for training and testing scores
+train_scores=[clf.score(X_train,y_train) for clf in clf_tree]
+test_scores=[clf.score(X_test,y_test) for clf in clf_tree]
+fig,ax=plt.subplots()
+ax.set_xlabel("alpha")
+ax.set_ylabel("accuracy")
+ax.set_title("Accuracy vs alpha for training and testing sets")
+ax.plot(ccp_alphas,train_scores,label="train")
+ax.plot(ccp_alphas,test_scores,label="test")
+ax.legend()
+plt.show()
